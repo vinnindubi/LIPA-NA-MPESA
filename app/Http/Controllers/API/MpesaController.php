@@ -5,13 +5,15 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Env;
 
 class MpesaController extends Controller
 {
     public function generateAccessToken(){
  
-        $consumer_key="QP1RAVsnfef9ua8VMX7q2G43YfzRdFiWGzO58n0DGLGbBU92";
-        $consumer_secret="DezlfTUipb2vmGAQXdci9EY01GW6QL5WP4kMDfI9KAA7qXF0sDEEl0yMtE7jvfA1";
+        $consumer_key= env('CONSUMER_KEY');
+        $consumer_secret= env('CONSUMER_SECRET');
+        
 
         $ch = curl_init('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials');
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -24,13 +26,27 @@ class MpesaController extends Controller
        return $result->access_token;
     }
     public function stkPush(){
-            $access_token=$this->generateAccessToken();
+        $access_token = $this->generateAccessToken();
         $BusinessShortCode= 174379;
-        $passkey='bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
-        //$timestamp = Carbon::rawParse('now')->format('YmdHms');
-
-        //$password= base64_encode($BusinessShortCode.$passkey.$timestamp);
-        $amount=1;
+        $passkey=env('DARAJA_PASSKEY');
+       // $password=env('DARAJA_PASSWORD');
+        $timestamp = "20250814153755";
+        $password = base64_encode($BusinessShortCode .$passkey. $timestamp);
+        $amount= 1;
+        $payload= json_encode([
+            "BusinessShortCode"=>$BusinessShortCode,
+            // password = as a result of .base64_encode($businessShortCode.$passkey.$timestamp)
+            "Password"=>$password,
+            "Timestamp"=> $timestamp,
+            "TransactionType"=> "CustomerPayBillOnline",
+            "Amount"=> $amount,
+            "PartyA"=> 254790194570,
+            "PartyB"=>174379,
+            "PhoneNumber"=> 254790194570,
+            "CallBackURL"=> "https://e465aea6bd94.ngrok-free.app/api/mpesa/callback",
+            "AccountReference"=> "VinniBiz",
+            "TransactionDesc"=> "Payment of a car" 
+        ]);
 
         $ch = curl_init('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest');
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -38,24 +54,33 @@ class MpesaController extends Controller
             'Content-Type: application/json'
         ]);
         curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-            "BusinessShortCode"=>$BusinessShortCode,
-            // password = as a result of .base64_encode($businessShortCode.$passkey.$timestamp)
-            "Password"=>"MTc0Mzc5YmZiMjc5ZjlhYTliZGJjZjE1OGU5N2RkNzFhNDY3Y2QyZTBjODkzMDU5YjEwZjc4ZTZiNzJhZGExZWQyYzkxOTIwMjUwODE0MTMxMzU3",
-            //"password"=>$password,
-            "Timestamp"=> "20250814131357",
-            "TransactionType"=> "CustomerPayBillOnline",
-            "Amount"=> $amount,
-            "PartyA"=> 254705248170,
-            "PartyB"=>174379,
-            "PhoneNumber"=> 254705248170,
-            "CallBackURL"=> "https://mydomain.com/path",
-            "AccountReference"=> "VinniBiz",
-            "TransactionDesc"=> "Payment of a car" 
-        ]));
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-$response     = curl_exec($ch);
-curl_close($ch);
-echo $response;
-    }
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $response     = curl_exec($ch);
+        curl_close($ch);
+        return $response;
+}
+public function mpesaCallback(Request $request)
+{
+    // Safaricom sends JSON, so decode it
+    $data = json_decode($request->getContent(), true);
+
+    // Log the data for debugging
+    \Log::info('M-Pesa Callback:', $data);
+    
+    // Optionally store in DB
+    // Transaction::create([
+    //     'merchant_request_id' => $data['Body']['stkCallback']['MerchantRequestID'] ?? null,
+    //     'checkout_request_id' => $data['Body']['stkCallback']['CheckoutRequestID'] ?? null,
+    //     'result_code' => $data['Body']['stkCallback']['ResultCode'] ?? null,
+    //     'result_desc' => $data['Body']['stkCallback']['ResultDesc'] ?? null,
+    //     'amount' => $data['Body']['stkCallback']['CallbackMetadata']['Item'][0]['Value'] ?? null,
+    //     ...
+    // ]);
+
+    return response()->json(['ResultCode' => 0, 'ResultDesc' => 'Success']);
+   
+}
+
+
 }

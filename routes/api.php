@@ -9,3 +9,5 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 Route::get('/access',[MpesaController::class,'generateAccessToken']);
 Route::get('/access/push',[MpesaController::class,'stkPush']);
+Route::post('/mpesa/callback', [MpesaController::class, 'mpesaCallback']);
+Route::get('/mpesa/callback', [MpesaController::class, 'mpesaCallback']);
