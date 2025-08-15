@@ -13,11 +13,11 @@
                         @csrf
                         <div class="flex flex-column full-width">
                             <label for="PhoneNumber">Phone:</label>
-                        <input type="text" placeholder="0712345678" name="PhoneNumber" class="mb-3"/></br>
+                        <input type="text" placeholder="0712345678" name="PhoneNumber" class="mb-3"/>
                         </div>
                         <div class="flex flex-column full-width">
                             <label for="amount">Amount</label>
-                            <input type="text" name="amount" placeholder=""/><br>
+                            <input type="text" name="amount" placeholder=""/>
                         </div>
                         <button type="submit">Pay</button>
                     </form>

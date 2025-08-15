@@ -27,14 +27,16 @@ class MpesaController extends Controller
         $result= json_decode($response);
        return $result->access_token;
     }
-    public function stkPush(){
+    public function stkPush($data){
+        
         $access_token = $this->generateAccessToken();
         $BusinessShortCode= 174379;
         $passkey=env('DARAJA_PASSKEY');
        // $password=env('DARAJA_PASSWORD');
         $timestamp = "20250814153755";
         $password = base64_encode($BusinessShortCode .$passkey. $timestamp);
-        $amount= 1;
+        $amount= $data['amount'];
+        $phoneNumber=$data['PhoneNumber'];
         $payload= json_encode([
             "BusinessShortCode"=>$BusinessShortCode,
             // password = as a result of .base64_encode($businessShortCode.$passkey.$timestamp)
@@ -42,9 +44,9 @@ class MpesaController extends Controller
             "Timestamp"=> $timestamp,
             "TransactionType"=> "CustomerPayBillOnline",
             "Amount"=> $amount,
-            "PartyA"=> 254790194570,
+            "PartyA"=> $phoneNumber,
             "PartyB"=>174379,
-            "PhoneNumber"=> 254790194570,
+            "PhoneNumber"=> $phoneNumber,
             "CallBackURL"=> "https://e465aea6bd94.ngrok-free.app/api/mpesa/callback",
             "AccountReference"=> "VinniBiz",
             "TransactionDesc"=> "Payment of a car" 
@@ -101,8 +103,8 @@ public function mpesaCallback(Request $request)
    
 }
  public function stkPushRequest( Request $request){
-    $this->stkPush();
-   dd($request->all());
+    return $this->stkPush($request);
+   
  }
 
 }
