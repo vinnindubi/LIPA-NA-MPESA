@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Env;
 use App\Models\Payment;
+use Illuminate\Support\Facades\Log;
 
 class MpesaController extends Controller
 {
@@ -67,7 +68,7 @@ public function mpesaCallback(Request $request)
     $data = json_decode($request->getContent());
 
     // Log the data for debugging
-    \Log::info('M-Pesa Callback:', array($data));//we convert the data because it is a stdClass Object.
+    Log::info('M-Pesa Callback:', array($data));//we convert the data because it is a stdClass Object.
     
     // Optionally store in DB
     // Transaction::create([
@@ -93,12 +94,15 @@ public function mpesaCallback(Request $request)
         ]);
 
     return response()->json([
-        // 'ResultCode' => 0,
-        //  'ResultDesc' => 'Success'
-        "data"=>$transDate
+        'ResultCode' => 0,
+         'ResultDesc' => 'Success'
+        
     ]);
    
 }
-
+ public function stkPushRequest( Request $request){
+    $this->stkPush();
+   dd($request->all());
+ }
 
 }
