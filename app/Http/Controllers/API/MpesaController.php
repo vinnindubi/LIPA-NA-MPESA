@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Env;
+use App\Models\Payment;
 
 class MpesaController extends Controller
 {
@@ -63,10 +64,10 @@ class MpesaController extends Controller
 public function mpesaCallback(Request $request)
 {
     // Safaricom sends JSON, so decode it
-    $data = json_decode($request->getContent(), true);
+    $data = json_decode($request->getContent());
 
     // Log the data for debugging
-    \Log::info('M-Pesa Callback:', $data);
+    \Log::info('M-Pesa Callback:', array($data));//we convert the data because it is a stdClass Object.
     
     // Optionally store in DB
     // Transaction::create([
@@ -77,8 +78,25 @@ public function mpesaCallback(Request $request)
     //     'amount' => $data['Body']['stkCallback']['CallbackMetadata']['Item'][0]['Value'] ?? null,
     //     ...
     // ]);
+    //$amount=$data['Body']['stkCallback']['CallbackMetadata']['Item'][0];
+    $result=$data->Body->stkCallback->CallbackMetadata;
+    $amount=$result->Item[0]->Value;
+    $mpesaReceiptno=$result->Item[1]->Value;
+    $phoneNumber=$result->Item[4]->Value;
+    $formattedPhone=str_replace('254','0',$phoneNumber);
+    $transDate=$result->Item[3]->Value;
+        Payment::create([
+            "Amount"=>$amount,
+            "MpesaReceiptNumber"=>$mpesaReceiptno,
+            "PhoneNumber"=>$formattedPhone,
+            "TransactionDate"=>$transDate,
+        ]);
 
-    return response()->json(['ResultCode' => 0, 'ResultDesc' => 'Success']);
+    return response()->json([
+        // 'ResultCode' => 0,
+        //  'ResultDesc' => 'Success'
+        "data"=>$transDate
+    ]);
    
 }
 
